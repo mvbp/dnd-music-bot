@@ -1,0 +1,76 @@
+{
+  "name": "server",
+  "version": "0.0.0",
+  "description": "server",
+  "license": "MIT",
+  "repository": "",
+  "author": {
+    "name": "Matthew Vater",
+    "email": "mvater.mvbp@live.com",
+    "url": "https://github.com/mvbp"
+  },
+  "keywords": [
+    "discord-bot music-bot dnd"
+  ],
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index",
+  "types": "lib/index",
+  "scripts": {
+    "clean": "rimraf lib && rimraf coverage",
+    "format": "prettier --write \"{src,__tests__}/**/*.ts\" --single-quote --trailing-comma es5",
+    "lint": "tslint --force --format verbose \"src/**/*.ts\"",
+    "prepublishOnly": "npm run build",
+    "prebuild": "npm run clean && npm run format && npm run lint && echo Using TypeScript && tsc --version",
+    "build": "tsc --pretty",
+    "start": "node --inspect=5858 -r ts-node/register ./src/server.ts",
+    "start:watch": "nodemon",
+    "test": "jest",
+    "coverage": "jest --coverage",
+    "watch": "npm run build -- --watch",
+    "watch:test": "jest --watch"
+  },
+  "dependencies": {
+    "@discordjs/opus": "^0.1.0",
+    "@types/ws": "^7.2.1",
+    "config": "^3.2.5",
+    "discord.js": "git+https://github.com/discordjs/discord.js.git",
+    "fs": "0.0.1-security",
+    "graphql-yoga": "^1.18.3",
+    "ws": "^7.2.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.3",
+    "@types/node": "^10.11.4",
+    "coveralls": "^3.0.2",
+    "jest": "^23.6.0",
+    "nodemon": "^2.0.2",
+    "prettier": "^1.14.3",
+    "rimraf": "^2.6.2",
+    "ts-jest": "^23.10.3",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "tslint-config-prettier": "^1.15.0",
+    "typescript": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      ".git",
+      "node_modules"
+    ],
+    "watch": [
+      "src"
+    ],
+    "exec": "npm start",
+    "ext": "ts"
+  }
+}

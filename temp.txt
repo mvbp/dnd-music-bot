@@ -1,0 +1,2 @@
+.\node_modules\ffmpeg
+-i '.\music\town\A Little Place Called Home - Adrian von Ziegler.mp3' -c:a libopus -b:a 96k output.ogg

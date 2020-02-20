@@ -1,0 +1,42 @@
+type Query {
+    getQueue(guildId: String!): Queue
+    getPlaylists: [Playlist]!
+}
+type Mutation {
+    joinChannel(channelId: String!, playlistId: String, shuffle: Boolean): Queue
+    switchPlaylist(guildId: String!, playlistId: String!, shuffle: Boolean transitionType: TransitionType): Queue
+    skipSong(guildId: String!): Song
+    pauseSong(guildId: String!): Song
+    resumeSong(guildId: String!, transitionType: TransitionType): Song
+    setVolume(guildId: String!, percent: Float!): Float!
+    getPlayTime(guildId: String!): Float!
+}
+type Queue {
+    guildId: String!
+    songs: [Song!]!
+    isPaused: Boolean!
+    currentSong: Song
+    volumePercent: Int!
+}
+type Playlist {
+    name: String!
+    songs: [Song!]!
+}
+type Song {
+    title: String!
+    artist: String!
+    length: Int!
+}
+enum TransitionType {
+    FADE
+    QUEUE
+    INSTANT
+}
+type Subscription {
+    queueUpdated(guildId: String!): SubscriptionPayload!
+}
+
+type SubscriptionPayload {
+    mutation: String!
+    data: Queue!
+}
