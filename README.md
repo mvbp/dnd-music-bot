@@ -1,2 +1,2 @@
 # dnd-music-bot
-A discord music bot used to play ambient music in dnd
+A discord music bot used to play ambient music
