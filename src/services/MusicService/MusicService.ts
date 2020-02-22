@@ -66,12 +66,6 @@ export class MusicService {
     const voiceConnection = await this.discordService.connectVoiceConnectionFromChannelId(
       channelId
     );
-    const connected = new Promise((resolve, reject) => {
-      voiceConnection.on('ready', () => {
-        return resolve();
-      });
-    });
-    await connected;
     return voiceConnection;
   }
 }

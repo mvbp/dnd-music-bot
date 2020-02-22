@@ -11,7 +11,7 @@ export class PlaylistHelper {
       playlist.songs.forEach(song => {
         if (song != null) {
           factory.addSong(
-            new Song(song.title, song.artist, song.length, playlist.name)
+            new Song(song.title, song.artist, song.length, song.url)
           );
         }
       });

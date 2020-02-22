@@ -8,13 +8,12 @@ import { IDiscordService } from './IDiscordService';
 import * as fs from 'fs';
 import { Song } from '../../models/Song';
 import * as config from 'config';
+import * as ytdl from 'ytdl-core';
 
 export class DiscordService implements IDiscordService {
   private apiToken = config.get('discord.apiToken');
   private client: Client;
   private loginStatus: Promise<string>;
-  private voiceChannel: VoiceChannel | undefined;
-  private voiceConnection: VoiceConnection | undefined;
   constructor(client: Client) {
     this.client = client;
     this.loginStatus = this.client.login(this.apiToken);
@@ -33,30 +32,26 @@ export class DiscordService implements IDiscordService {
       throw `Channel ${channelId} was not a voice channel`;
     }
 
-    this.voiceChannel = channel as VoiceChannel;
-    return await this.joinVoiceChannel(this.voiceChannel);
+    const voiceChannel = channel as VoiceChannel;
+    return await this.joinVoiceChannel(voiceChannel);
   }
   private async joinVoiceChannel(
     voiceChannel: VoiceChannel
   ): Promise<VoiceConnection> {
-    this.voiceConnection = await voiceChannel.join();
-    return this.voiceConnection;
+    const voiceConnection = await voiceChannel.join();
+    return voiceConnection;
   }
 
-  playSong(
+  async playSong(
     voiceConnection: VoiceConnection,
     song: Song,
     volume: number,
     songEndListener: () => void
   ): Promise<StreamDispatcher> {
     return new Promise((resolve, reject) => {
-      const dispatcher = this.voiceConnection?.play(
-        fs.createReadStream(song.songPath),
-        {
-          type: 'ogg/opus',
-          volume,
-        }
-      );
+      const dispatcher = voiceConnection?.play(ytdl(song.url), {
+        volume,
+      });
       dispatcher?.on('finish', songEndListener);
       dispatcher?.on('start', () => {
         return resolve(dispatcher);

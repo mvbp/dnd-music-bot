@@ -46,10 +46,9 @@ export class Queue {
     this.notifySubscribersChanged('TRACK_NUMBER');
   }
 
-  skipSong() {
+  async skipSong() {
     this.currentTrackNumber = this.getNextTrackNumber();
-
-    this.discordService.playSong(
+    await this.discordService.playSong(
       this.voiceConnection,
       this.getCurrentSong(),
       this.volume,
