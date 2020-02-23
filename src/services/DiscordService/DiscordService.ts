@@ -5,15 +5,16 @@ import {
   StreamDispatcher,
 } from 'discord.js';
 import { IDiscordService } from './IDiscordService';
-import * as fs from 'fs';
 import { Song } from '../../models/Song';
-import * as config from 'config';
-import * as ytdl from 'ytdl-core';
+import config from 'config';
+import youtubeStream from 'youtube-audio-stream';
 
 export class DiscordService implements IDiscordService {
   private apiToken = config.get('discord.apiToken');
   private client: Client;
   private loginStatus: Promise<string>;
+  private songChangeObservable;
+
   constructor(client: Client) {
     this.client = client;
     this.loginStatus = this.client.login(this.apiToken);
@@ -45,14 +46,12 @@ export class DiscordService implements IDiscordService {
   async playSong(
     voiceConnection: VoiceConnection,
     song: Song,
-    volume: number,
-    songEndListener: () => void
+    volume: number
   ): Promise<StreamDispatcher> {
     return new Promise((resolve, reject) => {
-      const dispatcher = voiceConnection?.play(ytdl(song.url), {
+      const dispatcher = voiceConnection?.play(youtubeStream(song.url), {
         volume,
       });
-      dispatcher?.on('finish', songEndListener);
       dispatcher?.on('start', () => {
         return resolve(dispatcher);
       });
@@ -67,8 +66,24 @@ export class DiscordService implements IDiscordService {
     dispatcher.resume();
   }
 
-  setVolume(dispatcher: StreamDispatcher, volumePercent: number) {
-    dispatcher.setVolume(volumePercent / 100.0);
+  setVolume(
+    dispatcher: StreamDispatcher,
+    volumePercent: number
+  ): Promise<number> {
+    let volume = volumePercent;
+    if (volumePercent > 1) {
+      volume = 1;
+    }
+    if (Math.abs(volume - dispatcher.volume) < 0.005) {
+      return Promise.resolve(volume);
+    }
+    dispatcher.setVolume(volume);
+    return new Promise((resolve, _) => {
+      dispatcher.volume;
+      dispatcher?.on('volumeChange', (_, newVolume) => {
+        return resolve(newVolume);
+      });
+    });
   }
 
   getPlayTime(dispatcher: StreamDispatcher): number {

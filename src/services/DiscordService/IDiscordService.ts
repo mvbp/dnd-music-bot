@@ -11,15 +11,17 @@ export interface IDiscordService {
   playSong(
     voiceChannel: VoiceConnection,
     song: Song,
-    volume: number,
-    songEndListener: () => void
+    volume: number
   ): Promise<StreamDispatcher>;
 
   pauseSong(dispatcher: StreamDispatcher);
 
   resumeSong(dispatcher: StreamDispatcher);
 
-  setVolume(dispatcher: StreamDispatcher, volumePercent: number);
+  setVolume(
+    dispatcher: StreamDispatcher,
+    volumePercent: number
+  ): Promise<number>;
 
   getPlayTime(dispatcher: StreamDispatcher): number;
 }

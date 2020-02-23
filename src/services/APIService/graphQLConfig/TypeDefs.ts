@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import fs from 'fs';
 
 export class TypeDefs {
   private typeDefs: string = fs.readFileSync(

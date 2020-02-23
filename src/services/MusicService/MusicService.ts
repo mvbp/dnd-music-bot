@@ -2,8 +2,8 @@ import { Queue } from '../../models/Queue';
 import { IPlaylistHelper } from './IPlaylistHelper';
 import { Playlist } from '../../models/Playlist';
 import { IDiscordService } from '../DiscordService/IDiscordService';
-import { PubSub } from 'graphql-yoga';
 import { VoiceConnection } from 'discord.js';
+import { PubSub } from 'apollo-server';
 
 export class MusicService {
   private discordService: IDiscordService;
@@ -32,11 +32,13 @@ export class MusicService {
     const newQueue = new Queue(
       voiceConnection,
       this.discordService,
-      playlist,
-      shuffle,
       this.pubSub
     );
+    await newQueue.switchPlaylist(playlist, shuffle);
     this.botGuildMap.set(guildId!, newQueue);
+    // voiceConnection.on('disconnect', () => {
+    //   this.botGuildMap.delete(guildId);
+    // });
     return newQueue;
   }
 

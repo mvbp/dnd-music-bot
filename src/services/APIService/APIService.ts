@@ -1,29 +1,26 @@
-import { GraphQLServer, PubSub } from 'graphql-yoga';
 import { TypeDefs } from './graphQLConfig/TypeDefs';
 import { Resolvers } from './graphQLConfig/Resolvers';
+import { ApolloServer, gql } from 'apollo-server';
 
 export class APIService {
-  private pubSub: PubSub;
   private typeDefs: string;
   private resolvers: any;
-  constructor(pubSub: PubSub, resolvers: Resolvers, typeDefs: TypeDefs) {
-    this.pubSub = pubSub;
+  constructor(resolvers: Resolvers, typeDefs: TypeDefs) {
     this.resolvers = resolvers.getResolvers();
     this.typeDefs = typeDefs.getTypeDefs();
   }
 
-  serve(): GraphQLServer {
-    const server = new GraphQLServer({
-      typeDefs: this.typeDefs,
+  serve(): ApolloServer {
+    const typedefs = gql(this.typeDefs);
+    const server = new ApolloServer({
+      typeDefs: gql(this.typeDefs),
       resolvers: this.resolvers,
-      context: {
-        pubsub: this.pubSub,
-      },
     });
-    const options = {
-      port: 3000,
-    };
-    server.start(options, () => {});
+
+    server.listen().then(({ url, subscriptionsUrl }) => {
+      console.log(`🚀 Server ready at ${url}`);
+      console.log(`🚀 Subscriptions ready at ${subscriptionsUrl}`);
+    });
 
     return server;
   }

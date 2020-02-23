@@ -3,20 +3,20 @@ type Query {
     getPlaylists: [Playlist]!
 }
 type Mutation {
-    joinChannel(channelId: String!, playlistId: String, shuffle: Boolean): Queue
-    switchPlaylist(guildId: String!, playlistId: String!, shuffle: Boolean transitionType: TransitionType): Queue
-    skipSong(guildId: String!): Song
-    pauseSong(guildId: String!): Song
-    resumeSong(guildId: String!, transitionType: TransitionType): Song
+    joinChannel(channelId: String!, playlistId: String, shuffle: Boolean): Queue!
+    switchPlaylist(guildId: String!, playlistId: String!, shuffle: Boolean transitionType: TransitionType): Queue!
+    skipSong(guildId: String!): Song!
+    pauseSong(guildId: String!): Song!
+    resumeSong(guildId: String!, transitionType: TransitionType): Song!
     setVolume(guildId: String!, percent: Float!): Float!
-    getPlayTime(guildId: String!): Float!
+    getPlayTime(guildId: String!): Int!
 }
 type Queue {
     guildId: String!
     songs: [Song!]!
     isPaused: Boolean!
-    currentSong: Song
-    volumePercent: Int!
+    trackNumber: Int!
+    volumePercent: Float!
 }
 type Playlist {
     name: String!
@@ -32,11 +32,15 @@ enum TransitionType {
     QUEUE
     INSTANT
 }
-type Subscription {
-    queueUpdated(guildId: String!): SubscriptionPayload!
-}
 
-type SubscriptionPayload {
+type Subscription {
+    volumeChanged(guildId: String): Float!
+    playlistChanged(guildId: String!): Queue!
+    songChanged(guildId: String!): SongChangedSubscriptionPayload!
+}
+    
+type SongChangedSubscriptionPayload {
     mutation: String!
-    data: Queue!
+    song: Song!
+    playTime: Int!
 }

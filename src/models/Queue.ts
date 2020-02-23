@@ -1,34 +1,28 @@
 import { IDiscordService } from '../services/DiscordService/IDiscordService';
 import { Song } from './Song';
 import { Playlist } from './Playlist';
-import { PubSub } from 'graphql-yoga';
+import { PubSub } from 'apollo-server';
 import { StreamDispatcher, VoiceConnection } from 'discord.js';
 
 export class Queue {
   guildId: string;
   songs: Array<Song> = [];
   isPaused: Boolean = true;
-  currentTrackNumber: number = 0;
-  volume: number = 0.1;
+  trackNumber: number = 0;
+  volumePercent: number = 0.1;
   private voiceConnection: VoiceConnection;
   private discordAudioStream: StreamDispatcher | undefined;
   private pubSub: PubSub;
   private discordService: IDiscordService;
-  private songEndListener = () => {
-    this.skipSong();
-  };
   constructor(
     voiceConnection: VoiceConnection,
     discordService: IDiscordService,
-    playlist: Playlist,
-    shuffle: Boolean,
     pubSub: PubSub
   ) {
     this.voiceConnection = voiceConnection;
     this.guildId = voiceConnection.channel.guild.id;
     this.discordService = discordService;
     this.pubSub = pubSub;
-    this.switchPlaylist(playlist, shuffle);
   }
 
   async switchPlaylist(playlist: Playlist, shuffle: Boolean) {
@@ -36,24 +30,24 @@ export class Queue {
     if (shuffle) {
       this.songs = this.shuffleSongs(this.songs);
     }
-    this.currentTrackNumber = 0;
+    this.trackNumber = 0;
+    await this.playSong();
+    this.notifySubscribersPlaylistChanged();
+  }
+  private async playSong() {
     this.discordAudioStream = await this.discordService.playSong(
       this.voiceConnection,
       this.getCurrentSong(),
-      this.volume,
-      this.songEndListener
+      this.volumePercent
     );
-    this.notifySubscribersChanged('TRACK_NUMBER');
+    this.setSongObservers();
+    this.notifySubscribersSongChanged('New', this.songs[this.trackNumber], 0);
   }
 
-  async skipSong() {
-    this.currentTrackNumber = this.getNextTrackNumber();
-    await this.discordService.playSong(
-      this.voiceConnection,
-      this.getCurrentSong(),
-      this.volume,
-      this.songEndListener
-    );
+  async skipSong(): Promise<Song> {
+    this.trackNumber = this.getNextTrackNumber();
+    await this.playSong();
+    return this.getCurrentSong();
   }
 
   pauseSong() {
@@ -61,6 +55,12 @@ export class Queue {
     if (this.isMusicPlaying()) {
       this.discordService.pauseSong(this.discordAudioStream!);
     }
+    this.notifySubscribersSongChanged(
+      'Pause',
+      this.songs[this.trackNumber],
+      this.getPlayTime()
+    );
+    return this.getCurrentSong();
   }
 
   resumeSong() {
@@ -68,12 +68,18 @@ export class Queue {
     if (this.isMusicPlaying()) {
       this.discordService.resumeSong(this.discordAudioStream!);
     }
+    this.notifySubscribersSongChanged(
+      'Resume',
+      this.songs[this.trackNumber],
+      this.getPlayTime()
+    );
+    return this.getCurrentSong();
   }
 
-  setVolume(volumePercent: number) {
-    this.volume = volumePercent;
+  async setVolume(volumePercent: number): Promise<number> {
+    this.volumePercent = volumePercent;
     if (this.isMusicPlaying()) {
-      return this.discordService.setVolume(
+      return await this.discordService.setVolume(
         this.discordAudioStream!,
         volumePercent
       );
@@ -95,11 +101,11 @@ export class Queue {
   }
 
   private getCurrentSong() {
-    return this.songs[this.currentTrackNumber];
+    return this.songs[this.trackNumber];
   }
 
   private getNextTrackNumber() {
-    return (this.currentTrackNumber + 1) % this.songs.length;
+    return (this.trackNumber + 1) % this.songs.length;
   }
 
   private shuffleSongs(songs: Array<Song>) {
@@ -110,11 +116,46 @@ export class Queue {
     return songs;
   }
 
-  notifySubscribersChanged(mutation: string) {
-    this.pubSub?.publish(`queueUpdated-${this.guildId}`, {
-      queueUpdated: {
-        mutation: mutation,
-        data: this,
+  setSongObservers() {
+    this.discordAudioStream?.on('volumeChange', (_, newVolume: number) => {
+      this.notifySubscribersVolumeChanged(newVolume);
+    });
+
+    this.discordAudioStream?.on('finish', () => {
+      this.notifySubscribersSongChanged(
+        'Finished',
+        this.songs[this.trackNumber],
+        this.getPlayTime()
+      );
+      this.skipSong();
+    });
+  }
+
+  notifySubscribersSongChanged(mutation: string, song: Song, playTime: number) {
+    this.pubSub?.publish('songChanged', {
+      songChanged: {
+        mutation,
+        song,
+        playTime,
+        guildId: this.guildId,
+      },
+    });
+  }
+
+  notifySubscribersPlaylistChanged() {
+    this.pubSub?.publish('playlistChanged', {
+      playlistChanged: {
+        queue: this,
+        guildId: this.guildId,
+      },
+    });
+  }
+
+  notifySubscribersVolumeChanged(volume: number) {
+    this.pubSub?.publish('volumeChanged', {
+      volumeChanged: {
+        volume,
+        guildId: this.guildId,
       },
     });
   }
