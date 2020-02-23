@@ -1,6 +1,7 @@
 import { TypeDefs } from './graphQLConfig/TypeDefs';
 import { Resolvers } from './graphQLConfig/Resolvers';
 import { ApolloServer, gql } from 'apollo-server';
+import config from 'config';
 
 export class APIService {
   private typeDefs: string;
@@ -16,11 +17,14 @@ export class APIService {
       typeDefs: gql(this.typeDefs),
       resolvers: this.resolvers,
     });
+    const port = config.get('server.port');
 
-    server.listen().then(({ url, subscriptionsUrl }) => {
-      console.log(`🚀 Server ready at ${url}`);
-      console.log(`🚀 Subscriptions ready at ${subscriptionsUrl}`);
-    });
+    server
+      .listen({ port: parseInt(port) })
+      .then(({ url, subscriptionsUrl }) => {
+        console.log(`🚀 Server ready at ${url}`);
+        console.log(`🚀 Subscriptions ready at ${subscriptionsUrl}`);
+      });
 
     return server;
   }
