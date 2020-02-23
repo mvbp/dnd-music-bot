@@ -17,6 +17,7 @@ type Queue {
     isPaused: Boolean!
     trackNumber: Int!
     volumePercent: Float!
+    playlistName: String!
 }
 type Playlist {
     name: String!

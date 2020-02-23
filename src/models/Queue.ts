@@ -10,6 +10,7 @@ export class Queue {
   isPaused: Boolean = true;
   trackNumber: number = 0;
   volumePercent: number = 0.1;
+  playlistName: string = '';
   private voiceConnection: VoiceConnection;
   private discordAudioStream: StreamDispatcher | undefined;
   private pubSub: PubSub;
@@ -27,6 +28,7 @@ export class Queue {
 
   async switchPlaylist(playlist: Playlist, shuffle: Boolean) {
     this.songs = playlist.songs;
+    this.playlistName = playlist.name;
     if (shuffle) {
       this.songs = this.shuffleSongs(this.songs);
     }
