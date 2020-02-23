@@ -1,4 +1,7 @@
 {
+    "discord": {
+        "apiToken": "DISCORD_API_TOKEN"
+    },
     "server": {
         "port": "PORT"
     }
